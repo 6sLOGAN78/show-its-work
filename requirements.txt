@@ -5,6 +5,8 @@ scikit-learn>=1.4        # TF-IDF retrieval over the evidence trail
 networkx>=3.3            # causal-memory graph
 pyyaml>=6.0
 pydantic>=2.7
+pyarrow>=15.0
+fastparquet>=2024.2.0
 
 # --- web UI (thin HTTP API over the engine) ---
 fastapi>=0.110
