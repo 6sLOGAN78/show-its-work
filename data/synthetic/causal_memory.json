@@ -4,13 +4,13 @@
       "cause": "on_time_delivery_rate",
       "effect": "avg_review_score",
       "weight": 0.99,
-      "confirmations": 13
+      "confirmations": 14
     },
     {
       "cause": "on_time_delivery_rate",
       "effect": "net_revenue",
       "weight": 0.99,
-      "confirmations": 24
+      "confirmations": 27
     },
     {
       "cause": "avg_review_score",
