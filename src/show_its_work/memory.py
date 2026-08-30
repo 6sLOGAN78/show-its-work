@@ -88,8 +88,11 @@ class CausalMemory:
                  "confirmations": d.get("confirmations", 0)} for u, v, d in self.g.edges(data=True)]
 
     def save(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps({"edges": self.edges()}, indent=2))
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text(json.dumps({"edges": self.edges()}, indent=2))
+        except (OSError, PermissionError):
+            pass
 
 
 class EpisodicStore:
@@ -97,9 +100,12 @@ class EpisodicStore:
         self.path = path
 
     def append(self, ep: Episode):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a") as f:
-            f.write(json.dumps(asdict(ep)) + "\n")
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.path.open("a") as f:
+                f.write(json.dumps(asdict(ep)) + "\n")
+        except (OSError, PermissionError):
+            pass
 
     def all(self) -> list[Episode]:
         if not self.path.exists():

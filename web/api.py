@@ -116,11 +116,16 @@ def bootstrap():
 
 @app.post("/api/investigate")
 def api_investigate(ask: Ask):
-    window = tuple(ask.window) if ask.window else None
-    llm_kwargs = {"provider": ask.provider} if ask.provider else {}
-    cfg = RunConfig(llm=LLMConfig(**llm_kwargs))
-    r = investigate(ask.question, ask.persona, window=window, cfg=cfg)
-    return JSONResponse(to_payload(r))
+    try:
+        window = tuple(ask.window) if ask.window else None
+        llm_kwargs = {"provider": ask.provider} if ask.provider else {}
+        cfg = RunConfig(llm=LLMConfig(**llm_kwargs))
+        r = investigate(ask.question, ask.persona, window=window, cfg=cfg)
+        return JSONResponse(to_payload(r))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"error": str(e), "traceback": traceback.format_exc()}, status_code=500)
 
 
 @app.get("/api/memory")

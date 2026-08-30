@@ -56,5 +56,8 @@ class RunConfig:
 
 
 def ensure_dirs() -> None:
-    for d in (SYNTH, TELEMETRY_DIR):
-        d.mkdir(parents=True, exist_ok=True)
+    try:
+        for d in (SYNTH, TELEMETRY_DIR):
+            d.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        pass

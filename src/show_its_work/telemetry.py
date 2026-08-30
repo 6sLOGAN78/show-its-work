@@ -76,10 +76,13 @@ class Telemetry:
         return out
 
     def persist(self) -> str:
-        TELEMETRY_DIR.mkdir(parents=True, exist_ok=True)
-        fp = TELEMETRY_DIR / f"{self.run_id}.jsonl"
-        with fp.open("w") as f:
-            for e in self.events:
-                f.write(json.dumps(asdict(e)) + "\n")
-            f.write(json.dumps({"summary": self.summary()}) + "\n")
-        return str(fp)
+        try:
+            TELEMETRY_DIR.mkdir(parents=True, exist_ok=True)
+            fp = TELEMETRY_DIR / f"{self.run_id}.jsonl"
+            with fp.open("w") as f:
+                for e in self.events:
+                    f.write(json.dumps(asdict(e)) + "\n")
+                f.write(json.dumps({"summary": self.summary()}) + "\n")
+            return str(fp)
+        except (OSError, PermissionError):
+            return ""
