@@ -45,8 +45,10 @@ To run the full stack locally with Gemini AI integrated, follow these steps:
    pip install -e .
    ```
 
+
 3. **Set your Gemini API Key:**
-   The backend directly talks to Google's Gemini API. Export your API key in your terminal:
+   The backend directly talks to Google's Gemini API and includes an **automatic model fallback system**. If the primary model (e.g., `gemini-flash-lite-latest`) hits a rate limit or fails, it will seamlessly fall back to `gemini-3.6-flash`, `gemini-3.5-flash`, etc., before degrading to the deterministic stub.
+   Export your API key in your terminal:
    ```bash
    export SIW_API_BASE="https://generativelanguage.googleapis.com/v1beta/openai"
    export SIW_API_KEY="your-gemini-api-key-here"

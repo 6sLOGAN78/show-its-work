@@ -97,31 +97,40 @@ class ApiClient(LLMClient):
         return bool(self.cfg.api_key)
 
     def complete(self, system, user, fallback="", max_tokens=3000) -> LLMResult:
-        body = json.dumps({
-            "model": self.cfg.api_model, "temperature": self.cfg.temperature,
-            "max_tokens": max_tokens,
-            "messages": [{"role": "system", "content": system},
-                         {"role": "user", "content": user}],
-        }).encode()
+        models_to_try = [self.cfg.api_model, "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash"]
+        models_to_try = list(dict.fromkeys(models_to_try))
+        last_error = None
         t0 = time.perf_counter()
-        try:
-            req = urllib.request.Request(
-                f"{self.cfg.api_base.rstrip('/')}/chat/completions", data=body,
-                headers={"Content-Type": "application/json",
-                         "Authorization": f"Bearer {self.cfg.api_key}"})
-            resp = json.loads(urllib.request.urlopen(req, timeout=30).read())
-            text = resp["choices"][0]["message"]["content"]
-            usage = resp.get("usage", {})
-            it = usage.get("prompt_tokens", _approx_tokens(system + user))
-            ot = usage.get("completion_tokens", _approx_tokens(text))
-        except Exception as e:
-            # degrade quietly to the deterministic template — the memo is unaffected
-            _warn_once(f"LLM provider unreachable at {self.cfg.api_base} "
-                       f"({type(e).__name__}); using the deterministic template.")
-            return LLMResult(fallback, "stub(api-unreachable)", 0, 0, 0.0, False)
-        dt = (time.perf_counter() - t0) * 1000
-        cost = it / 1e6 * self.cfg.price_in_per_mtok + ot / 1e6 * self.cfg.price_out_per_mtok
-        return LLMResult(text, self.cfg.api_model, it, ot, dt, True, round(cost, 6))
+
+        for attempt_model in models_to_try:
+            body = json.dumps({
+                "model": attempt_model, "temperature": self.cfg.temperature,
+                "max_tokens": max_tokens,
+                "messages": [{"role": "system", "content": system},
+                             {"role": "user", "content": user}],
+            }).encode()
+            try:
+                req = urllib.request.Request(
+                    f"{self.cfg.api_base.rstrip('/')}/chat/completions", data=body,
+                    headers={"Content-Type": "application/json",
+                             "Authorization": f"Bearer {self.cfg.api_key}"})
+                resp = json.loads(urllib.request.urlopen(req, timeout=30).read())
+                text = resp["choices"][0]["message"]["content"]
+                usage = resp.get("usage", {})
+                it = usage.get("prompt_tokens", _approx_tokens(system + user))
+                ot = usage.get("completion_tokens", _approx_tokens(text))
+                dt = (time.perf_counter() - t0) * 1000
+                cost = it / 1e6 * self.cfg.price_in_per_mtok + ot / 1e6 * self.cfg.price_out_per_mtok
+                return LLMResult(text, attempt_model, it, ot, dt, True, round(cost, 6))
+            except Exception as e:
+                last_error = e
+                time.sleep(1)
+                continue
+
+        err_name = type(last_error).__name__ if last_error else "UnknownError"
+        _warn_once(f"LLM provider unreachable at {self.cfg.api_base} after trying models {models_to_try} "
+                   f"({err_name}); using the deterministic template.")
+        return LLMResult(fallback, "stub(api-unreachable)", 0, 0, 0.0, False)
 
 
 def make_client(cfg: LLMConfig | None = None) -> LLMClient:
