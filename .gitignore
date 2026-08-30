@@ -1,8 +1,6 @@
-# generated data (rebuild with: python -m show_its_work.data.build)
+# generated data (raw data excluded, synthetic bundled for deployment)
 data/raw/*
 !data/raw/.gitkeep
-data/synthetic/*
-!data/synthetic/.gitkeep
 # telemetry run logs
 telemetry/runs/*
 !telemetry/runs/.gitkeep

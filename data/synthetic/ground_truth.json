@@ -1,0 +1,53 @@
+{
+  "window": [
+    "2024-05-08",
+    "2024-05-23"
+  ],
+  "trigger_kpi": "net_revenue",
+  "revenue_recognized_before_damage": 857407.05,
+  "revenue_recognized_after_damage": 776943.62,
+  "total_revenue_lost": 103394.02,
+  "causes": [
+    {
+      "id": "primary",
+      "role": "primary_cause",
+      "type": "delivery_degradation",
+      "entity": "house_bravos",
+      "kpi_chain": [
+        "on_time_delivery_rate",
+        "avg_review_score",
+        "repeat_purchase_rate",
+        "net_revenue"
+      ],
+      "explains_share": 0.733,
+      "expect": "crowned #1; survives temporal+control+counterfactual"
+    },
+    {
+      "id": "minor",
+      "role": "minor_driver",
+      "type": "supplier_stockout",
+      "entity": "category:health_beauty",
+      "explains_share": 0.107,
+      "expect": "mentioned as secondary; NOT crowned"
+    },
+    {
+      "id": "decoy",
+      "role": "decoy",
+      "type": "competitor_flash_sale",
+      "entity": "market_wide_narrative",
+      "structured_footprint": false,
+      "explains_share": 0.0,
+      "expect": "REJECTED by skeptic: damage concentrated in one seller, not market-wide; no counterfactual support."
+    }
+  ],
+  "ambiguous_case": {
+    "window": [
+      "2024-03-12",
+      "2024-03-22"
+    ],
+    "type": "diffuse_platform_dip",
+    "entity": "no single concentration",
+    "expect": "engine ABSTAINS (INSUFFICIENT) \u2014 material but diffuse; contradictory evidence; no seller/category explains it."
+  },
+  "data_source": "synthetic"
+}
