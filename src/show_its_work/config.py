@@ -40,10 +40,10 @@ class LLMConfig:
     # your deployed proxy URL (e.g. https://<app>.vercel.app/v1) via env or here.
     api_base: str = field(default_factory=lambda: os.environ.get("SIW_API_BASE", "http://localhost:3000/v1"))
     api_key: str = field(default_factory=lambda: os.environ.get("SIW_API_KEY", "proxy-bypass-key"))
-    api_model: str = field(default_factory=lambda: os.environ.get("SIW_API_MODEL", "gemini-3.6-flash"))
+    api_model: str = field(default_factory=lambda: os.environ.get("SIW_API_MODEL", "gemini-flash-lite-latest"))
     price_in_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_IN", "0.075")))
     price_out_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_OUT", "0.30")))
-    temperature: float = 0.0          # determinism: same question -> same words
+    temperature: float = 0.1          # determinism: same question -> same words
 
 
 @dataclass
