@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -128,7 +128,37 @@ def api_investigate(ask: Ask):
         return JSONResponse({"error": str(e), "traceback": traceback.format_exc()}, status_code=500)
 
 
+
+@app.post("/api/proxy/chat/completions")
+async def proxy_chat_completions(request: Request):
+    import urllib.request
+    import json
+    import os
+    
+    api_key = os.environ.get("SIW_API_KEY")
+    if not api_key:
+        return JSONResponse({"error": "No API key configured on server"}, status_code=500)
+    
+    body = await request.body()
+    url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    req = urllib.request.Request(url, data=body, headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    })
+    
+    try:
+        resp = urllib.request.urlopen(req, timeout=30)
+        return JSONResponse(json.loads(resp.read()))
+    except urllib.error.HTTPError as e:
+        try:
+            return JSONResponse(json.loads(e.read()), status_code=e.code)
+        except:
+            return JSONResponse({"error": str(e)}, status_code=e.code)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
 @app.get("/api/memory")
+
 def api_memory():
     return {"edges": CausalMemory().edges()}
 

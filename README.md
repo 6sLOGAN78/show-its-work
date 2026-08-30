@@ -46,11 +46,22 @@ If you are a developer and want to run the Python engine on your own local machi
    pip install -e .
    ```
 
-3. **Set your own Gemini API Key:**
-   The local backend directly talks to Google's Gemini API and includes an **automatic model fallback system**. Export your personal API key in your terminal to enable the LLM locally:
+
+3. **Set your Gemini API Key:**
+   The local backend directly talks to Google's Gemini API and includes an **automatic model fallback system**. 
+
+   **Option A: Use your own key (Recommended)**
+   Export your personal API key in your terminal:
    ```bash
    export SIW_API_BASE="https://generativelanguage.googleapis.com/v1beta/openai"
    export SIW_API_KEY="your-gemini-api-key-here"
+   ```
+
+   **Option B: Key-free local development (Proxy through Vercel)**
+   If you don't have a Gemini API key, you can proxy your local LLM requests through the live Vercel deployment, which securely uses the maintainer's key:
+   ```bash
+   export SIW_API_BASE="https://show-its-work.vercel.app/api/proxy"
+   export SIW_API_KEY="dummy-key"
    ```
 
 
