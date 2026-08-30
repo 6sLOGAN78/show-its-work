@@ -1,0 +1,19 @@
+# --- deterministic analytics core (the LLM never computes a number) ---
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.4        # TF-IDF retrieval over the evidence trail
+networkx>=3.3            # causal-memory graph
+pyyaml>=6.0
+pydantic>=2.7
+
+# --- interface ---
+streamlit>=1.37
+plotly>=5.22
+
+# --- optional LLM layer (the engine runs fully without any of these, in 'stub' mode) ---
+# no extra deps: 'ollama' and 'api' both talk over plain HTTP.
+#   ollama -> local server, `ollama pull llama3.2`
+#   api    -> any OpenAI-compatible endpoint via SIW_API_BASE / SIW_API_KEY / SIW_API_MODEL
+
+# --- dev ---
+pytest>=8.0

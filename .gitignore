@@ -1,0 +1,34 @@
+# generated data (rebuild with: python -m show_its_work.data.build)
+data/raw/*
+!data/raw/.gitkeep
+data/synthetic/*
+!data/synthetic/.gitkeep
+# telemetry run logs
+telemetry/runs/*
+!telemetry/runs/.gitkeep
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv*/
+.env
+.env.*
+# vector store / caches
+.chroma/
+*.faiss
+.cache/
+# os / editor
+.DS_Store
+.ipynb_checkpoints/
+
+# claude code harness artifacts
+.claude/
+.claude
+
+# internal strategy — keep local, do not publish
+docs/round2_plan.md
+docs/round2_checklist.md
+
+# accenture-provided brief (their IP; the input, not our work) + any stray PDFs
+*.pdf

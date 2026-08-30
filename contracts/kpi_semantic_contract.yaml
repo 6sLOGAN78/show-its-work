@@ -1,0 +1,113 @@
+# ============================================================================
+# KPI SEMANTIC CONTRACT  —  "Show Its Work"
+# ----------------------------------------------------------------------------
+# The single governed source of truth for what every metric MEANS. Loaded on
+# every run (semantic-memory tier). The LLM may NEVER redefine a metric; it
+# reads this file. This is what stops "the engine invented its own revenue."
+#
+# Brief item #2: definitions, calculations, drivers, thresholds, lineage,
+# access restrictions.  Item #1: 3-5 connected KPIs, 2-3 sources, different
+# grains + refresh cadences (see `source` + `refresh` + `grain`).
+# ============================================================================
+
+version: "0.1"
+calendar:
+  fiscal_week_start: monday
+  timezone: "America/Sao_Paulo"      # Olist is a Brazilian marketplace
+  known_seasonality: [black_friday_nov, carnival_feb, mothers_day_may]
+
+# ---- data sources: DIFFERENT grains + refresh cadences (brief #1, #8) ------
+sources:
+  orders_dw:
+    system: "orders warehouse (Olist orders + order_items + payments)"
+    grain: order_item
+    refresh: hourly              # near-real-time
+    freshness_sla_hours: 3
+    governance: well_governed
+  reviews_stream:
+    system: "post-delivery review submissions (Olist order_reviews)"
+    grain: order
+    refresh: event_lagging       # reviews arrive DAYS after delivery -> laggy
+    freshness_sla_hours: 72
+    governance: loosely_governed # free-text, self-reported, Portuguese
+  crm_tickets:
+    system: "support + CRM notes (synthetic evidence trail, seeded vocab)"
+    grain: ticket
+    refresh: daily_batch
+    freshness_sla_hours: 24
+    governance: loosely_governed
+
+# ---- the 3-5 connected KPIs (a causal CHAIN, not independent metrics) ------
+# delivery_delay -> review_score -> repeat_rate -> net_revenue
+kpis:
+  net_revenue:
+    label: "Net Revenue (BRL)"
+    definition: "Item price + freight for delivered/shipped orders, net of cancelled/refunded orders."
+    calculation: "SUM(order_items.price + order_items.freight_value) WHERE order_status IN ('delivered','shipped','invoiced')"
+    source: orders_dw
+    grain_out: daily
+    unit: BRL
+    drivers: [order_volume, avg_order_value, price, mix_category, on_time_delivery_rate, repeat_purchase_rate]
+    materiality:                        # structured so the detector actually reads them
+      z_threshold: 2.0                 # STL residual z-score gate (signal vs noise, brief Q1)
+      min_abs_delta: 20000             # BRL/period; business-impact gate
+      min_pct: 0.05                    # 5% relative move
+      note: "material iff z>z_threshold AND (abs_delta>min_abs_delta OR pct>min_pct)"
+    lineage: [orders_dw.order_items, orders_dw.orders(status), orders_dw.payments]
+    access: finance_restricted        # <-- entitlement tag (brief #7)
+
+  on_time_delivery_rate:
+    label: "On-Time Delivery Rate"
+    definition: "Share of orders delivered on or before the promised estimate date."
+    calculation: "MEAN(order_delivered_customer_date <= order_estimated_delivery_date)"
+    source: orders_dw
+    grain_out: daily
+    unit: ratio
+    drivers: [seller_processing_time, carrier_transit_time, seller_id, geo_region]
+    materiality:
+      z_threshold: 2.0
+      min_abs_delta: 0.0
+      min_pct: 0.03
+      note: "3 percentage-point move on the rate"
+    lineage: [orders_dw.orders(delivered_date, estimated_date), orders_dw.order_items(seller_id)]
+    access: operational_open
+
+  avg_review_score:
+    label: "Avg Review Score (1-5)"
+    definition: "Mean customer review score for orders reviewed in the period."
+    calculation: "MEAN(order_reviews.review_score)"
+    source: reviews_stream
+    grain_out: daily
+    unit: stars
+    drivers: [on_time_delivery_rate, delivery_delay_days, category, seller_id]
+    materiality:
+      z_threshold: 2.0
+      min_abs_delta: 0.15
+      min_pct: 0.03
+    lineage: [reviews_stream.order_reviews, orders_dw.orders(order_id join)]
+    access: operational_open
+    caveats: "free-text in Portuguese; scores lag delivery by days (see reviews_stream.refresh)"
+
+  repeat_purchase_rate:
+    label: "30-Day Repeat Purchase Rate"
+    definition: "Share of customers with a prior order in the trailing 30 days who order again."
+    calculation: "customers_with_repeat / customers_active   (trailing 30d window)"
+    source: orders_dw
+    grain_out: weekly            # coarser grain than the daily KPIs
+    unit: ratio
+    drivers: [avg_review_score, on_time_delivery_rate, category, cohort_tenure]
+    materiality:
+      z_threshold: 1.5
+      min_abs_delta: 0.0
+      min_pct: 0.015
+    lineage: [orders_dw.orders(customer_id, purchase_ts)]
+    access: finance_restricted
+    caveats: "SPARSE for new categories/sellers — trips the low-history guard (brief #6)"
+
+# ---- known causal edges (priors for the proposer; grow via causal memory) --
+# strength is a prior weight [0-1]; confirmed runs strengthen, contradictions decay.
+causal_priors:
+  - {cause: on_time_delivery_rate, effect: avg_review_score, sign: "+", strength: 0.72, lag_days: 3}
+  - {cause: avg_review_score,      effect: repeat_purchase_rate, sign: "+", strength: 0.61, lag_days: 14}
+  - {cause: repeat_purchase_rate,  effect: net_revenue,        sign: "+", strength: 0.55, lag_days: 21}
+  - {cause: price,                 effect: order_volume,       sign: "-", strength: 0.40, lag_days: 0}   # decoy-prone

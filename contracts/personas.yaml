@@ -1,0 +1,68 @@
+# ============================================================================
+# PERSONAS + ENTITLEMENTS  —  "Show Its Work"
+# ----------------------------------------------------------------------------
+# Brief #3: >=2 personas get DIFFERENT narratives / recommended actions.
+# Brief #7: role-based security — row-, column-, and domain-level entitlement.
+#
+# The SAME KPI movement is narrated differently per persona, and any driver
+# whose KPI carries an `access:` tag the persona lacks is REDACTED (not shown,
+# not silently dropped — the memo says "1 driver withheld: finance-restricted").
+# Access tags come from kpi_semantic_contract.yaml (access: finance_restricted | operational_open).
+# ============================================================================
+
+version: "0.1"
+
+# entitlement tiers a persona may hold (column/domain-level security)
+access_tiers:
+  operational_open: "Operational + fulfilment metrics. Broadly readable."
+  finance_restricted: "Revenue, margin, repeat-rate $ impact. Finance + leadership only."
+  pii: "Individual customer identifiers. No persona below reads raw PII — aggregates only."
+
+personas:
+  ops_lead:
+    label: "Fulfilment / Ops Lead"
+    goal: "Keep delivery SLAs green; catch failing sellers/carriers fast."
+    entitlements: [operational_open]          # NO finance_restricted -> triggers redaction demo
+    row_scope: {geo_region: "*"}              # all regions
+    narrative:
+      depth: operational
+      focus: [on_time_delivery_rate, seller_id, carrier_transit_time, delivery_delay_days]
+      length: "tight — 3 bullets + 1 action"
+    action_style: "specific operational levers (pause seller, reroute carrier, SLA alert)"
+    channel: "Slack + morning ops digest"
+
+  revenue_analyst:
+    label: "Revenue / Finance Analyst"
+    goal: "Explain revenue movement to leadership with defensible attribution."
+    entitlements: [operational_open, finance_restricted]   # sees the $ chain end to end
+    row_scope: {geo_region: "*"}
+    narrative:
+      depth: analytical
+      focus: [net_revenue, repeat_purchase_rate, avg_order_value, mix_category]
+      length: "full memo — waterfall + confidence + what-I-still-need"
+    action_style: "financial levers + expected impact ranges"
+    channel: "weekly memo + dashboard annotation"
+
+  regional_manager_south:
+    label: "Regional Manager — South"
+    goal: "Own South-region performance end to end."
+    entitlements: [operational_open, finance_restricted]
+    row_scope: {geo_region: "SP,PR,SC,RS"}    # ROW-level filter: South states only (brief #7)
+    narrative:
+      depth: analytical
+      focus: [net_revenue, on_time_delivery_rate, seller_id]
+      length: "region-scoped memo"
+    action_style: "region-local levers"
+    channel: "regional review"
+
+# ---- the entitlement DEMO scenario the prototype must show (brief #7) -------
+entitlement_scenario:
+  name: "revenue_drop_seen_by_ops_lead"
+  question: "Why did Net Revenue drop last week?"
+  asked_by: ops_lead
+  expected_behavior: >
+    net_revenue and repeat_purchase_rate are finance_restricted; ops_lead lacks that tier.
+    Engine answers WITHIN entitlement: narrates the on-time-delivery collapse it CAN see,
+    explicitly states "1 driver withheld (finance-restricted): revenue-$ attribution — ask a
+    Finance-entitled viewer," and routes the finance portion rather than leaking it.
+    Same question asked_by revenue_analyst returns the full $ waterfall. One movement, two memos.
