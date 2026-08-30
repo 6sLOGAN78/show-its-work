@@ -22,6 +22,27 @@ python -m show_its_work.run serve           # the web UI at http://localhost:853
 
 ---
 
+## 🚀 Using the Gemini Proxy (feature/gemini-proxy branch)
+
+This specific branch includes a completely secure public proxy architecture. It allows anyone to clone this repository and immediately use the Gemini AI features **without** needing their own API key. 
+
+### For End-Users (Running the App)
+1. **Pull this branch:** `git clone -b feature/gemini-proxy <your-repo-url>`
+2. **Run it:** `python -m show_its_work.run serve`
+3. If the maintainer has deployed the proxy and pointed `SIW_API_BASE` at it, Gemini writes the memo automatically — no keys or `.env` needed. If not, the app **still runs** and falls back to the deterministic template memo (nothing breaks; you'll see one line noting the LLM was unreachable).
+
+> Fully key-free out of the box requires the maintainer to deploy the proxy once (below) and set the default `SIW_API_BASE` to their Vercel URL. To run against a local proxy instead, see [`gemini-proxy/README.md`](gemini-proxy/README.md).
+
+### For Developers (Hosting your own Proxy)
+If you fork this repository and want to host your own secure proxy so your users don't need API keys:
+1. Navigate to the `gemini-proxy/` folder.
+2. Run `npx vercel` to deploy the Node.js Express app to Vercel (or deploy it anywhere that supports Node.js).
+3. In your Vercel Dashboard, add your `GEMINI_API_KEY` to the Environment Variables.
+4. Update `SIW_API_BASE` in `src/show_its_work/config.py` to point to your new `https://your-url.vercel.app/v1`.
+*(Note: Be sure to disable "Vercel Authentication" for preview branches in your Vercel Project settings, otherwise the CLI will get a 401 error!)*
+
+---
+
 ## 1. Solution approach
 
 Dashboards show *what* changed; the days-long slog is finding *why*. This engine closes
@@ -73,10 +94,10 @@ confidently. That's the learning loop (objective #7).
   delivery (hourly), avg review score (event-lagging), repeat-purchase rate (weekly). Chain:
   delivery → reviews → repeat → revenue, with realistic lags.
 - **Swappable LLM** (`llm/`): `stub` (default, no LLM — the whole thing still runs) · `ollama`
-  (local, e.g. `ollama pull llama3.2`) · `api` (any OpenAI-compatible endpoint via `SIW_API_BASE`/`SIW_API_KEY`/`SIW_API_MODEL`). Set `SIW_LLM=ollama|api` or use
-  the UI selector. Cost/latency/tokens are metered per call.
+  (local, e.g. `ollama pull llama3.2`) · `api` (any OpenAI-compatible endpoint). 
+  *Note:* By default, the `api` provider now automatically routes to a secure public proxy deployed via `gemini-proxy/` to allow seamless use of Gemini without requiring your own API key. You can still override this by setting `SIW_API_BASE` and `SIW_API_KEY` to your own endpoint. Cost/latency/tokens are metered per call.
 - **Stack:** Python 3.11 · pandas/numpy/statsmodels/scipy · scikit-learn (retrieval) · NetworkX
-  (causal memory) · Pydantic · FastAPI + a hand-built HTML/CSS/JS frontend (SVG charts, canvas) · optional local Ollama or any OpenAI-compatible API for the LLM layer.
+  (causal memory) · Pydantic · FastAPI + a hand-built HTML/CSS/JS frontend (SVG charts, canvas) · optional local Ollama or Gemini proxy for the LLM layer.
 
 ## 4. Key features (mapped to the brief's Minimum Prototype Expectations)
 

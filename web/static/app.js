@@ -75,8 +75,7 @@ async function runInvestigation(window) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         question: $('#q').value, persona: $('#persona').value,
-        window: window || (STATE.activeScn && STATE.activeScn.window) || null,
-        provider: 'stub'
+        window: window || (STATE.activeScn && STATE.activeScn.window) || null
       })
     }),
     animateStages()

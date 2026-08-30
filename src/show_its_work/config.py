@@ -33,14 +33,16 @@ class LLMConfig:
     Cost is derived from configurable per-million-token prices, so runtime telemetry
     reports a real cost-per-insight for whichever model you point it at.
     """
-    provider: str = field(default_factory=lambda: os.environ.get("SIW_LLM", "stub"))
+    provider: str = field(default_factory=lambda: os.environ.get("SIW_LLM", "api"))
     ollama_model: str = field(default_factory=lambda: os.environ.get("SIW_OLLAMA_MODEL", "llama3.2"))
     ollama_host: str = field(default_factory=lambda: os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
-    api_base: str = field(default_factory=lambda: os.environ.get("SIW_API_BASE", "https://api.openai.com/v1"))
-    api_key: str = field(default_factory=lambda: os.environ.get("SIW_API_KEY", ""))
-    api_model: str = field(default_factory=lambda: os.environ.get("SIW_API_MODEL", "gpt-4o-mini"))
-    price_in_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_IN", "0.15")))
-    price_out_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_OUT", "0.60")))
+    # default targets a LOCAL gemini-proxy; for a key-free clone experience, set this to
+    # your deployed proxy URL (e.g. https://<app>.vercel.app/v1) via env or here.
+    api_base: str = field(default_factory=lambda: os.environ.get("SIW_API_BASE", "http://localhost:3000/v1"))
+    api_key: str = field(default_factory=lambda: os.environ.get("SIW_API_KEY", "proxy-bypass-key"))
+    api_model: str = field(default_factory=lambda: os.environ.get("SIW_API_MODEL", "gemini-3.6-flash"))
+    price_in_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_IN", "0.075")))
+    price_out_per_mtok: float = field(default_factory=lambda: float(os.environ.get("SIW_PRICE_OUT", "0.30")))
     temperature: float = 0.0          # determinism: same question -> same words
 
 

@@ -27,7 +27,7 @@ class Ask(BaseModel):
     question: str = "Why did our net revenue drop last week?"
     persona: str = "revenue_analyst"
     window: list[str] | None = None
-    provider: str = "stub"
+    provider: str | None = None
 
 
 SCENARIOS = [
@@ -113,7 +113,8 @@ def bootstrap():
 @app.post("/api/investigate")
 def api_investigate(ask: Ask):
     window = tuple(ask.window) if ask.window else None
-    cfg = RunConfig(llm=LLMConfig(provider=ask.provider))
+    llm_kwargs = {"provider": ask.provider} if ask.provider else {}
+    cfg = RunConfig(llm=LLMConfig(**llm_kwargs))
     r = investigate(ask.question, ask.persona, window=window, cfg=cfg)
     return JSONResponse(to_payload(r))
 

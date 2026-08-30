@@ -12,6 +12,7 @@ server, a gateway, ...) via plain HTTP — no vendor SDK.
 from __future__ import annotations
 
 import json
+import sys
 import time
 import urllib.request
 from dataclasses import dataclass
@@ -32,6 +33,16 @@ class LLMResult:
 
 def _approx_tokens(s: str) -> int:
     return max(1, len(s) // 4)
+
+
+_warned: set[str] = set()
+
+
+def _warn_once(msg: str) -> None:
+    """Emit one concise line to stderr per distinct message — no traceback spam."""
+    if msg not in _warned:
+        _warned.add(msg)
+        print(f"[show_its_work] {msg}", file=sys.stderr)
 
 
 class LLMClient:
@@ -98,13 +109,16 @@ class ApiClient(LLMClient):
                 f"{self.cfg.api_base.rstrip('/')}/chat/completions", data=body,
                 headers={"Content-Type": "application/json",
                          "Authorization": f"Bearer {self.cfg.api_key}"})
-            resp = json.loads(urllib.request.urlopen(req, timeout=120).read())
+            resp = json.loads(urllib.request.urlopen(req, timeout=30).read())
             text = resp["choices"][0]["message"]["content"]
             usage = resp.get("usage", {})
             it = usage.get("prompt_tokens", _approx_tokens(system + user))
             ot = usage.get("completion_tokens", _approx_tokens(text))
-        except Exception:
-            return LLMResult(fallback, "stub(api-error)", 0, 0, 0.0, False)
+        except Exception as e:
+            # degrade quietly to the deterministic template — the memo is unaffected
+            _warn_once(f"LLM provider unreachable at {self.cfg.api_base} "
+                       f"({type(e).__name__}); using the deterministic template.")
+            return LLMResult(fallback, "stub(api-unreachable)", 0, 0, 0.0, False)
         dt = (time.perf_counter() - t0) * 1000
         cost = it / 1e6 * self.cfg.price_in_per_mtok + ot / 1e6 * self.cfg.price_out_per_mtok
         return LLMResult(text, self.cfg.api_model, it, ot, dt, True, round(cost, 6))

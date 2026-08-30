@@ -32,3 +32,14 @@ docs/round2_checklist.md
 
 # accenture-provided brief (their IP; the input, not our work) + any stray PDFs
 *.pdf
+
+# api keys
+api.txt
+
+# ai-assistant scaffolding + runtime logs (keep out of the public repo)
+.agents/
+*.log
+
+# but always keep env TEMPLATES (no secrets in them)
+!**/.env.example
+!.env.example
