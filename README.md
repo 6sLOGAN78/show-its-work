@@ -30,9 +30,10 @@ This project is deployed live on Vercel! You can view and interact with the full
 
 **GitHub Repository:** [https://github.com/6sLOGAN78/show-its-work](https://github.com/6sLOGAN78/show-its-work)
 
-### Running Locally
 
-To run the full stack locally with Gemini AI integrated, follow these steps:
+### Running Locally (For Developers)
+
+If you are a developer and want to run the Python engine on your own local machine, you will need to provide your own API key (since the cloud keys are securely hidden).
 
 1. **Clone the repository:**
    ```bash
@@ -45,14 +46,13 @@ To run the full stack locally with Gemini AI integrated, follow these steps:
    pip install -e .
    ```
 
-
-3. **Set your Gemini API Key:**
-   The backend directly talks to Google's Gemini API and includes an **automatic model fallback system**. If the primary model (e.g., `gemini-flash-lite-latest`) hits a rate limit or fails, it will seamlessly fall back to `gemini-3.6-flash`, `gemini-3.5-flash`, etc., before degrading to the deterministic stub.
-   Export your API key in your terminal:
+3. **Set your own Gemini API Key:**
+   The local backend directly talks to Google's Gemini API and includes an **automatic model fallback system**. Export your personal API key in your terminal to enable the LLM locally:
    ```bash
    export SIW_API_BASE="https://generativelanguage.googleapis.com/v1beta/openai"
    export SIW_API_KEY="your-gemini-api-key-here"
    ```
+
 
 4. **Start the local server:**
    ```bash
