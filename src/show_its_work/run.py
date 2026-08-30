@@ -4,6 +4,7 @@
   investigate  run one investigation and print the memo + telemetry
   demo         run the full scenario suite (flagship, entitlement, abstain, sparse, noise)
   eval         print the evaluation scorecard vs the answer key
+  serve        launch the web UI (FastAPI) at http://localhost:8533
 """
 from __future__ import annotations
 
@@ -52,11 +53,22 @@ def cmd_build(_args):
     build()
 
 
+def cmd_serve(args):
+    import uvicorn
+    uvicorn.run("web.api:app", host="127.0.0.1", port=args.port, app_dir=str(_repo_root()))
+
+
+def _repo_root():
+    from pathlib import Path
+    return Path(__file__).resolve().parents[2]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="show_its_work", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("build").set_defaults(fn=cmd_build)
+    ps = sub.add_parser("serve"); ps.add_argument("--port", type=int, default=8533); ps.set_defaults(fn=cmd_serve)
     sub.add_parser("demo").set_defaults(fn=cmd_demo)
     sub.add_parser("eval").set_defaults(fn=cmd_eval)
     pi = sub.add_parser("investigate")

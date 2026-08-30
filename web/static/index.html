@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SHOW_ITS_WORK // KPI INTELLIGENCE ENGINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar"><div class="wrap">
+  <div class="brand"><span class="mk"><i></i></span>SHOW_ITS_WORK</div>
+  <nav class="nav">
+    <a href="#investigate">INVESTIGATE</a><span class="nav-sep">/</span>
+    <a href="#skeptic">SKEPTIC</a><span class="nav-sep">/</span>
+    <a href="#receipts">RECEIPTS</a><span class="nav-sep">/</span>
+    <a href="#telemetry">TELEMETRY</a>
+  </nav>
+  <div class="spacer"></div>
+  <div class="clock"><span>SYS.TIME</span><b id="clock">--:--:--</b><span id="tz">UTC+0</span></div>
+  <button class="btn" onclick="document.getElementById('q').focus()">RUN ANALYSIS <span class="ar">↗</span></button>
+</div></header>
+
+<!-- HERO /01 -->
+<section class="hero" style="position:relative">
+  <div class="side-rail">KPI · INTELLIGENCE · TO · ACTION</div>
+  <div class="wrap">
+    <div>
+      <div class="sn">/01 &nbsp; OVERVIEW</div>
+      <h1>SHOW<br>ITS WORK</h1>
+      <div class="tag"><span class="dot">▹</span> GROUNDED. SKEPTICAL. AUDITABLE.</div>
+      <p class="lede">A KPI engine that explains <b>why</b> a metric moved — every number traced to a
+        tool call, a skeptic that kills the plausible-but-wrong story, and an honest "I don't know"
+        when the evidence isn't there. The model never computes a number.</p>
+      <div class="cta">
+        <button class="btn" onclick="scrollTo2('#investigate')">START AN INVESTIGATION <span class="ar">↗</span></button>
+        <button class="btn ghost" onclick="loadScenario('entitlement')">SEE ROLE-GATED VIEW <span class="ar">↗</span></button>
+      </div>
+    </div>
+    <div class="console">
+      <div class="bar"><span>&gt; ENGINE_STATUS</span><b id="renderpct">READY</b></div>
+      <div class="render"><canvas id="viz"></canvas>
+        <div class="coord" id="coord">Δ_KPI __.__<br>Z_SCORE __.__<br>CONF ____</div>
+      </div>
+      <div class="foot"><span>DETERMINISTIC CORE</span><span id="scntag">//SCN_01</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- INVESTIGATE /02 -->
+<section id="investigate"><div class="wrap">
+  <div class="sec-head"><span class="sn">/02</span><h2>Investigate</h2>
+    <span class="desc">natural-language question → grounded answer</span></div>
+  <div class="query">
+    <div class="qrow">
+      <div class="field"><label>Question</label>
+        <input id="q" value="Why did our net revenue drop last week?" autocomplete="off"/></div>
+      <div class="field"><label>Persona</label><select id="persona"></select></div>
+      <button class="run-btn" id="run" onclick="runInvestigation()">RUN <span class="ar">↗</span></button>
+    </div>
+    <div class="chips" id="chips"><span class="lbl">Scenarios</span></div>
+  </div>
+
+  <!-- pipeline runner -->
+  <div class="runner" id="runner">
+    <div class="top"><span id="run-title">&gt; EXECUTING PIPELINE</span><span id="run-eta">GATE → VERIFY</span></div>
+    <div class="stages" id="stages"></div>
+  </div>
+</div></section>
+
+<!-- RESULTS -->
+<div id="results">
+  <!-- verdict + memo /03 -->
+  <section><div class="wrap">
+    <div class="sec-head"><span class="sn">/03</span><h2>The Answer</h2>
+      <span class="desc" id="answer-desc"></span></div>
+    <div class="grid-2">
+      <div class="pad">
+        <div id="verdict"></div>
+        <div id="redactions"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+      <div class="pad-r">
+        <div class="mono-label">RECOMMENDED ACTIONS</div>
+        <div id="actions"></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- skeptic /04 -->
+  <section id="skeptic"><div class="wrap">
+    <div class="sec-head"><span class="sn">/04</span><h2>The Skeptic</h2>
+      <span class="desc">every hypothesis faces falsification — a rejected card is the skeptic working</span></div>
+    <div class="pad" id="hyps" style="border:none"></div>
+  </div></section>
+
+  <!-- drivers /05 -->
+  <section><div class="wrap">
+    <div class="sec-head"><span class="sn">/05</span><h2>The Evidence Base</h2>
+      <span class="desc">deterministic attribution + the movement itself</span></div>
+    <div class="grid-2">
+      <div class="pad"><div id="waterfall"></div></div>
+      <div class="pad-r"><div id="line"></div></div>
+    </div>
+  </div></section>
+
+  <!-- receipts /06 -->
+  <section id="receipts"><div class="wrap">
+    <div class="sec-head"><span class="sn">/06</span><h2>Receipts</h2>
+      <span class="desc">every figure traces to a tool · source freshness + lineage</span></div>
+    <div class="grid-2">
+      <div class="pad"><div class="mono-label">FACTS — PROVENANCE-BOUND</div>
+        <table class="tbl" id="facts"></table>
+        <div id="prov" style="margin-top:14px"></div></div>
+      <div class="pad-r"><div class="mono-label">UNSTRUCTURED EVIDENCE</div>
+        <table class="tbl" id="evidence"></table>
+        <div id="verif" style="margin-top:12px"></div></div>
+    </div>
+  </div></section>
+
+  <!-- telemetry /07 -->
+  <section id="telemetry"><div class="wrap">
+    <div class="sec-head"><span class="sn">/07</span><h2>Runtime Telemetry</h2>
+      <span class="desc">latency · model calls · tokens · cost · LLM vs non-LLM</span></div>
+    <div class="pad" style="border:none">
+      <div class="metrics" id="metrics"></div>
+      <div class="statement" id="statement"></div>
+      <div class="prodbar" id="prodbar"></div>
+      <table class="tbl" id="ledger" style="margin-top:16px"></table>
+    </div>
+  </div></section>
+</div>
+
+<!-- FOOTER -->
+<section class="foot"><div class="wrap">
+  <div class="cols">
+    <div><div class="brand" style="margin-bottom:10px"><span class="mk"><i></i></span>SHOW_ITS_WORK</div>
+      <p class="mono-label" style="line-height:1.8">AIC 2026 · PS3 BUSINESSINTELLIGENCE.AI<br>TEAM MANDALORIANS · IIT PATNA</p></div>
+    <div><h5>Engine</h5><a href="#investigate">Investigate</a><a href="#skeptic">Skeptic</a>
+      <a href="#receipts">Receipts</a><a href="#telemetry">Telemetry</a></div>
+    <div><h5>Principles</h5><a>LLM ≠ truth</a><a>Falsify, don't assert</a><a>Abstain honestly</a><a>Show the receipts</a></div>
+    <div><h5>Method</h5><a>Signal gate</a><a>Driver waterfall</a><a>Skeptic debate</a><a>Causal memory</a></div>
+  </div>
+</div></section>
+
+<!-- STATUS BAR -->
+<footer class="statusbar"><div class="wrap">
+  <span><span class="dotk">●</span> CONNECTION SECURE</span>
+  <span class="rt" id="lat">LATENCY —</span>
+  <span class="mid" id="access">&gt; SYSTEM READY_</span>
+  <span class="rt" id="scn">SCN 0000</span>
+  <span id="clock2">--:--:--</span>
+</div></footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

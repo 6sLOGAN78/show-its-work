@@ -6,9 +6,9 @@ networkx>=3.3            # causal-memory graph
 pyyaml>=6.0
 pydantic>=2.7
 
-# --- interface ---
-streamlit>=1.37
-plotly>=5.22
+# --- web UI (thin HTTP API over the engine) ---
+fastapi>=0.110
+uvicorn>=0.29
 
 # --- optional LLM layer (the engine runs fully without any of these, in 'stub' mode) ---
 # no extra deps: 'ollama' and 'api' both talk over plain HTTP.

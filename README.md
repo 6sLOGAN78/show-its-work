@@ -17,7 +17,7 @@ pip install -e .
 python -m show_its_work.data.build          # build dataset + answer key (no download needed)
 python -m show_its_work.run demo            # run the full scenario suite in the terminal
 python -m show_its_work.run eval            # the evaluation scorecard
-streamlit run src/show_its_work/app.py      # the decision workspace UI
+python -m show_its_work.run serve           # the web UI at http://localhost:8533
 ```
 
 ---
@@ -76,7 +76,7 @@ confidently. That's the learning loop (objective #7).
   (local, e.g. `ollama pull llama3.2`) · `api` (any OpenAI-compatible endpoint via `SIW_API_BASE`/`SIW_API_KEY`/`SIW_API_MODEL`). Set `SIW_LLM=ollama|api` or use
   the UI selector. Cost/latency/tokens are metered per call.
 - **Stack:** Python 3.11 · pandas/numpy/statsmodels/scipy · scikit-learn (retrieval) · NetworkX
-  (causal memory) · Pydantic · Streamlit + Plotly · optional local Ollama or any OpenAI-compatible API for the LLM layer.
+  (causal memory) · Pydantic · FastAPI + a hand-built HTML/CSS/JS frontend (SVG charts, canvas) · optional local Ollama or any OpenAI-compatible API for the LLM layer.
 
 ## 4. Key features (mapped to the brief's Minimum Prototype Expectations)
 
@@ -89,9 +89,9 @@ confidently. That's the learning loop (objective #7).
 | One low-confidence → clarify/abstain | ambiguous (diffuse) + noise scenarios |
 | One sparse-history / new KPI | sparse-window scenario (`low_history` path) |
 | One role-based security / entitlement | Ops Lead redaction + row-scoped Regional Manager |
-| Evidence: freshness, method, contribution, confidence, lineage | Receipts tab / provenance |
-| LLM vs non-LLM breakdown | Telemetry tab / `telemetry.py` |
-| Runtime telemetry (latency, calls, tokens, cost) | Telemetry tab / `telemetry.py` |
+| Evidence: freshness, method, contribution, confidence, lineage | Receipts section / provenance |
+| LLM vs non-LLM breakdown | Telemetry section / `telemetry.py` |
+| Runtime telemetry (latency, calls, tokens, cost) | Telemetry section / `telemetry.py` |
 
 **Headline metrics** (`python -m show_its_work.run eval`): root-cause top-1 · **decoy-rejection**
 · abstention correctness · false-alert rate · citation precision.
@@ -111,6 +111,7 @@ src/show_its_work/
   llm/       swappable client (stub/ollama/api)
   memory.py  causal graph + episodic store + feedback
   telemetry.py  latency/tokens/cost + LLM-vs-non-LLM ledger
-  engine.py  orchestrates one investigation · app.py Streamlit · run.py CLI · eval.py scorecard
+  engine.py  orchestrates one investigation · run.py CLI · eval.py scorecard
+web/         FastAPI backend (api.py) + cyber-brutalist frontend (static/)
 docs/        proposal.md
 ```
