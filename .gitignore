@@ -43,3 +43,6 @@ api.txt
 !.env.example
 api.txt
 .env*
+
+.vercel/
+.ustht/
