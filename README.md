@@ -87,7 +87,8 @@ We call this "Show Its Work" because every single figure in the final memo trace
 
 ---
 
-## 2. Architecture
+
+## 2. Architecture & Step-by-Step Workflow
 
 ```
 question ─▶ intent ─▶ GATE ─▶ [entitlement pivot] ─▶ factpack ─▶ propose ─▶ SKEPTIC ─▶ judge
@@ -97,22 +98,29 @@ question ─▶ intent ─▶ GATE ─▶ [entitlement pivot] ─▶ factpack �
                   abstain (honest)                                          receipts-checked memo ◀┘
 ```
 
-Two layers, cleanly separated (this *is* the LLM-vs-non-LLM boundary):
+The system is strictly divided into two layers to maintain absolute data integrity:
 
-- **Deterministic core** (`tools/`, `metrics/`) — pandas/statsmodels/scipy. Computes every KPI
-  and every falsification test. Reproducible, cached, temperature-free.
-- **Reasoning layer** (`agents/`) — `reasoning.py` (intent, factpack, propose, skeptic, judge) is
-  **fully deterministic**; `narrative.py` is the **only** place an LLM is used, and only to phrase
-  a memo it cannot add numbers to.
+- **Deterministic core** (`src/show_its_work/tools/`, `metrics/`): Built on `pandas`, `statsmodels`, and `scipy`. This layer computes every single KPI, standard deviation, and falsification test. It is 100% reproducible, cached, and temperature-free. No LLM is involved here.
+- **Reasoning layer** (`src/show_its_work/agents/`): Coordinates the flow. `reasoning.py` handles the logic gate, proposer, skeptic, and judge deterministically using strict typed objects. `narrative.py` is the **only** place an LLM is called, purely to phrase the final memo.
 
-**Typed blackboard** (`models.py`): agents communicate through Pydantic objects (`Fact`,
-`Evidence`, `Hypothesis`, `Attack`, `Verdict`, `Action`) — never free-form chat — so numbers stay
-exact and every claim carries **provenance** (which tool, which args, which producer).
+### The Step-by-Step Investigative Pipeline
 
-**Four memory tiers** (`semantics.py`, `memory.py`): governed **semantic** contract (loaded every
-run), the **working** blackboard, an **episodic** store of past runs, and a **causal graph** that
-strengthens confirmed cause→effect links — so a second similar anomaly resolves faster and more
-confidently. That's the learning loop (objective #7).
+1. **Intent & Semantic Parsing:** The user asks a natural language question (e.g., "Why did revenue drop?"). The engine maps this to a specific KPI defined in `contracts/semantic_contract.json`.
+2. **The Statistical Gate (`detect_change`):** Before anything else, a deterministic Python function runs a Z-score and Mean Absolute Deviation (MAD) test against the historical data. If the drop is less than -3.0 standard deviations (normal seasonal variance) or the data is too sparse, the engine aborts and **abstains**.
+3. **Entitlement & Role-Gating:** The engine checks if the requesting persona (e.g., "Ops Lead") has the required clearance (e.g., `finance_restricted`). If not, financial data is aggressively redacted from the context.
+4. **The Proposer:** The engine runs basic slicing algorithms (e.g., breaking down revenue by product category or region) to find the mathematically largest drivers of the drop.
+5. **The Skeptic:** The most critical step. For every hypothesis generated, the Skeptic runs falsification tests (control groups, counterfactuals). If it finds that the control group *also* dropped, it concludes the hypothesis is a false correlation and kills it.
+6. **The Judge:** Scores the surviving evidence. If the causal link is weak, it outputs `INSUFFICIENT` and refuses to make a recommendation.
+7. **The Narrative Writer & Verifier:** The LLM receives only the surviving "fact pack" and drafts a human-readable memo. Finally, the Verifier scans the memo's text and deletes any numbers that were hallucinated or incorrectly modified by the LLM.
+
+**Typed blackboard** (`models.py`): Agents communicate through strict Pydantic objects (`Fact`, `Evidence`, `Hypothesis`, `Attack`, `Verdict`, `Action`). They never use free-form chat. This guarantees that numbers stay exact and every claim carries **provenance** (e.g., which specific pandas function produced it).
+
+**Four memory tiers** (`memory.py`):
+1. **Semantic:** The governed definitions of KPIs.
+2. **Working:** The live blackboard for the current run.
+3. **Episodic:** A store of past anomaly investigations.
+4. **Causal Graph:** Over time, the engine learns. If "weather delays" caused a revenue drop last month, that causal edge is strengthened, so next time it occurs, the engine resolves it faster with higher confidence.
+
 
 ## 3. Implementation
 
@@ -128,7 +136,7 @@ confidently. That's the learning loop (objective #7).
   delivery → reviews → repeat → revenue, with realistic lags.
 - **Swappable LLM** (`llm/`): `stub` (default, no LLM — the whole thing still runs) · `ollama`
   (local, e.g. `ollama pull llama3.2`) · `api` (any OpenAI-compatible endpoint). 
-  *Note:* By default, the `api` provider now automatically routes to a secure public proxy deployed via `gemini-proxy/` to allow seamless use of Gemini without requiring your own API key. You can still override this by setting `SIW_API_BASE` and `SIW_API_KEY` to your own endpoint. Cost/latency/tokens are metered per call.
+  *Note:* We provide a built-in proxy route for local developers through the live Vercel deployment so you can develop locally without providing a personal API key. Cost/latency/tokens are metered per call.
 - **Stack:** Python 3.11 · pandas/numpy/statsmodels/scipy · scikit-learn (retrieval) · NetworkX
   (causal memory) · Pydantic · FastAPI + a hand-built HTML/CSS/JS frontend (SVG charts, canvas) · optional local Ollama or Gemini proxy for the LLM layer.
 
