@@ -20,28 +20,47 @@ python -m show_its_work.run eval            # the evaluation scorecard
 python -m show_its_work.run serve           # the web UI at http://localhost:8533
 ```
 
----
-
-## 🚀 Using the Gemini Proxy (feature/gemini-proxy branch)
-
-This specific branch includes a completely secure public proxy architecture. It allows anyone to clone this repository and immediately use the Gemini AI features **without** needing their own API key. 
-
-### For End-Users (Running the App)
-1. **Pull this branch:** `git clone -b feature/gemini-proxy <your-repo-url>`
-2. **Run it:** `python -m show_its_work.run serve`
-3. If the maintainer has deployed the proxy and pointed `SIW_API_BASE` at it, Gemini writes the memo automatically — no keys or `.env` needed. If not, the app **still runs** and falls back to the deterministic template memo (nothing breaks; you'll see one line noting the LLM was unreachable).
-
-> Fully key-free out of the box requires the maintainer to deploy the proxy once (below) and set the default `SIW_API_BASE` to their Vercel URL. To run against a local proxy instead, see [`gemini-proxy/README.md`](gemini-proxy/README.md).
-
-### For Developers (Hosting your own Proxy)
-If you fork this repository and want to host your own secure proxy so your users don't need API keys:
-1. Navigate to the `gemini-proxy/` folder.
-2. Run `npx vercel` to deploy the Node.js Express app to Vercel (or deploy it anywhere that supports Node.js).
-3. In your Vercel Dashboard, add your `GEMINI_API_KEY` to the Environment Variables.
-4. Update `SIW_API_BASE` in `src/show_its_work/config.py` to point to your new `https://your-url.vercel.app/v1`.
-*(Note: Be sure to disable "Vercel Authentication" for preview branches in your Vercel Project settings, otherwise the CLI will get a 401 error!)*
 
 ---
+
+## 🚀 Live Demo & Deployment
+
+This project is deployed live on Vercel! You can view and interact with the full web UI here:
+**[https://show-its-work.vercel.app](https://show-its-work.vercel.app)**
+
+**GitHub Repository:** [https://github.com/6sLOGAN78/show-its-work](https://github.com/6sLOGAN78/show-its-work)
+
+### Running Locally
+
+To run the full stack locally with Gemini AI integrated, follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/6sLOGAN78/show-its-work.git
+   cd show-its-work
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install -e .
+   ```
+
+3. **Set your Gemini API Key:**
+   The backend directly talks to Google's Gemini API. Export your API key in your terminal:
+   ```bash
+   export SIW_API_BASE="https://generativelanguage.googleapis.com/v1beta/openai"
+   export SIW_API_KEY="your-gemini-api-key-here"
+   ```
+
+4. **Start the local server:**
+   ```bash
+   ./run_local.sh
+   # Or manually: uvicorn web.api:app --port 8533
+   ```
+   Open `http://127.0.0.1:8533` in your browser.
+
+---
+
 
 ## 1. Solution approach
 
