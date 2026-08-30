@@ -10,7 +10,9 @@
   --border-thick: 2px solid #111111;
 }
 
-body {
+html, body {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
   background-color: var(--bg) !important;
   background-image: 
     linear-gradient(var(--grid) 1px, transparent 1px),
@@ -22,6 +24,7 @@ body {
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 11px !important;
   line-height: 1.7 !important;
+  
 }
 
 h1, h2, h3, h4 {
