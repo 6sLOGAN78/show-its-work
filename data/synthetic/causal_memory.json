@@ -10,7 +10,7 @@
       "cause": "on_time_delivery_rate",
       "effect": "net_revenue",
       "weight": 0.99,
-      "confirmations": 22
+      "confirmations": 24
     },
     {
       "cause": "avg_review_score",

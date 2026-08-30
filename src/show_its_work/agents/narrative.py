@@ -120,7 +120,7 @@ def write_memo(inv, persona, entitlement, client, tele) -> str:
             f"Facts:\n{facts_block}\n\nEvidence:\n{ev_block}\n\n"
             f"Draft to improve (keep all citations and numbers):\n{template}")
     t0 = __import__("time").perf_counter()
-    res = client.complete(system, user, fallback=template, max_tokens=700)
+    res = client.complete(system, user, fallback=template, max_tokens=3000)
     if res.used_llm:
         tele.record_llm("writer", res.model, res.input_tokens, res.output_tokens, res.latency_ms, res.cost_usd)
         inv.notes.append(f"narrative: LLM ({res.model})")

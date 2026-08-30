@@ -41,3 +41,5 @@ api.txt
 # but always keep env TEMPLATES (no secrets in them)
 !**/.env.example
 !.env.example
+api.txt
+.env*

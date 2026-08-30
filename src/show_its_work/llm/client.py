@@ -56,7 +56,7 @@ class LLMClient:
         return False
 
     def complete(self, system: str, user: str, fallback: str = "",
-                 max_tokens: int = 800) -> LLMResult:
+                 max_tokens: int = 3000) -> LLMResult:
         return LLMResult(text=fallback, model="stub", input_tokens=0,
                          output_tokens=0, latency_ms=0.0, used_llm=False)
 
@@ -70,7 +70,7 @@ class OllamaClient(LLMClient):
         except Exception:
             return False
 
-    def complete(self, system, user, fallback="", max_tokens=800) -> LLMResult:
+    def complete(self, system, user, fallback="", max_tokens=3000) -> LLMResult:
         body = json.dumps({
             "model": self.cfg.ollama_model, "stream": False,
             "options": {"temperature": self.cfg.temperature, "num_predict": max_tokens},
@@ -96,7 +96,7 @@ class ApiClient(LLMClient):
     def available(self) -> bool:
         return bool(self.cfg.api_key)
 
-    def complete(self, system, user, fallback="", max_tokens=800) -> LLMResult:
+    def complete(self, system, user, fallback="", max_tokens=3000) -> LLMResult:
         body = json.dumps({
             "model": self.cfg.api_model, "temperature": self.cfg.temperature,
             "max_tokens": max_tokens,
