@@ -1,48 +1,23 @@
-# How It Works: System Architecture Q&A
+# How It Works: System Architecture (Interview Q&A)
 
-The "Show Its Work" Business Intelligence engine operates on a strict pipeline designed to prevent AI hallucinations. By strictly separating deterministic mathematical computation from language generation, the system ensures that every metric and root cause is mathematically verifiable. 
-
-Here is how the 5-step engine works, explained through the questions it answers.
+Here’s a behind-the-scenes look at how we actually built the engine, explained exactly how we’d talk about it in an interview or a design review. 
 
 ---
 
-### Q: How does the system know a metric drop is actually a real problem and not just normal seasonal noise?
-**A: The Statistical Gate (`detect.py`)**
+### Q: How do you know if a drop in the numbers is actually a real problem, and not just normal seasonal noise?
+**A:** That’s exactly where we start, because alert fatigue is a massive issue in the enterprise. Before we even wake the AI up, we run the data through what we call the "Statistical Gate." It’s a pure Python script that strips out normal weekly seasonality—like the fact that sales almost always drop on Sundays. Then it runs a super strict math test called a Median Absolute Deviation (MAD) Z-score. If the drop isn't statistically significant, or if it's just a tiny dip in actual dollars, the engine just stops and says, "Nothing to see here." We don't waste time or money asking an LLM to explain a non-issue.
 
-Before the LLM is ever invoked, the system runs a strict mathematical check to prevent alert fatigue.
-1. It fetches the raw time-series data and strips out weekly seasonality (subtracting day-of-week means).
-2. It establishes a local baseline using a **Median Absolute Deviation (MAD)** robust mean-shift Z-test (which is highly resistant to extreme outliers).
-3. **The result:** If the Z-score is below a strict threshold (e.g., `< 3.0`), or if the total dollars lost isn't material, the system terminates early. It knows the drop is just noise.
+### Q: Okay, so a real drop is confirmed. How do you figure out what actually caused it?
+**A:** This is where our "Proposer" steps in. It mathematically slices and dices the data to see where the bleeding is coming from. It does a waterfall breakdown—basically looking at the total loss and saying, "Okay, we lost $100k, and exactly $75k of that came from this one specific seller." 
 
-### Q: Once a real drop is confirmed, how does the engine figure out who or what caused it?
-**A: The Proposer (`decompose.py`)**
+### Q: But how do you avoid being tricked by things like Simpson's Paradox, where the data looks like a drop but it's really just a mix shift?
+**A:** We're really proud of this part. Sometimes, a metric drops just because a high-volume, low-margin product suddenly sold more than usual. To an AI, that looks like a performance drop. We explicitly programmed a guard against this. The engine splits the data into "within-group effects" and "mix effects." If it realizes the drop is just because of a shift in the mix of what's selling, it flags a `simpson_risk` and stops the system from blaming a false driver. 
 
-The engine mathematically breaks down the aggregate loss to find the specific segment (e.g., a specific seller, a product category, or a region) responsible for the shortfall. It executes a precise "waterfall attribution," calculating exactly how much revenue was lost by `seller_A` versus `seller_B`.
+### Q: Just because a seller had a bad week at the same time revenue dropped doesn't mean one caused the other. How do you prove it's not just a coincidence?
+**A:** Exactly! That’s why we built the "Skeptic." The Skeptic basically plays devil's advocate. Just because a competitor ran a flash sale the same week our revenue dropped, doesn't mean the flash sale caused it. The Skeptic runs four hard math tests to try and kill the hypothesis. For example, it runs a Control Group test. If the competitor flash sale really caused our revenue drop, then *every* seller on our platform should have dropped. If the Skeptic sees that only *one* seller dropped and the rest of the market was fine, it kills the flash sale theory immediately. It also runs a counterfactual test: "If we delete this bad seller from the dataset, does the revenue drop disappear?" If yes, we've found our culprit.
 
-### Q: How does the engine avoid being tricked by "Simpson's Paradox" or mix-shifts?
-**A: The Mix-Shift Guard (`decompose.py`)**
+### Q: What happens if the data is just too messy or contradictory?
+**A:** Then we do something most AI systems refuse to do: we admit we don't know. Our "Judge" agent scores the surviving evidence on a strict rubric. If the drop is too diffuse—meaning no single seller or category is to blame—or if the evidence is pointing in two different directions, the Judge hits the brakes. It outputs an `INSUFFICIENT` verdict. In the real world, it is infinitely better for an AI to say "I don't have enough data to tell you why this happened" than to hallucinate a plausible-sounding lie.
 
-A massive risk in BI is blaming a drop on a driver when it is actually just a mix shift (e.g., a high-AOV category taking more volume). The engine explicitly splits the aggregate change into a *within-group effect* and a *mix effect*. If the mix effect heavily overrides the actual drop, the `simpson_risk` flag fires and halts blind attribution.
-
-### Q: Just because a seller's deliveries failed at the same time revenue dropped doesn't mean one caused the other. How does the system prove correlation isn't just coincidence?
-**A: The Skeptic (`falsify.py`)**
-
-This is the core differentiator. The Skeptic acts as a prosecutor and runs four explicit, deterministic tests to falsify correlations:
-1. **Temporal Alignment:** Locates the exact onset day (using a `mean - 1.5*std` bound) to verify the cause strictly preceded the effect.
-2. **Control Group Test:** If the hypothesis claims a "market-wide competitor sale" caused the drop, the Skeptic checks the rest of the market. If the damage is concentrated in just one seller, the market-wide narrative is falsified.
-3. **Counterfactual Estimate:** It mathematically removes the suspected culprit from the dataset. If the overall KPI drop disappears, the hypothesis is strengthened.
-4. **Signature Match:** It checks if predicted secondary ripples actually manifest (e.g., if deliveries are late, do review scores also drop?).
-
-### Q: What happens if the data is messy, diffuse, or the evidence contradicts itself?
-**A: The Honest Judge (`reasoning.py`)**
-
-The Judge uses a strict Boolean rubric rather than subjective LLM logic. It calculates a score based on temporal alignment, control group success, corroborating documentation, and the percentage of the drop explained. 
-
-If the data is diffuse (no single seller concentrated) or contradictory, the Judge issues an `INSUFFICIENT` verdict. It is explicitly programmed to abstain and say *"I don't know yet"* rather than hand the user a plausible-sounding guess.
-
-### Q: If the LLM never computes a number, how is the final report written without the AI hallucinating?
-**A: The Narrative Writer & Verifier (`narrative.py` & `client.py`)**
-
-1. **The Fact Pack:** The engine constructs a completely deterministic string template of the final, proven numbers.
-2. **The LLM Writer:** Gemini is prompted to rewrite this Fact Pack into a warm, persona-specific memo (e.g., tailoring the tone for an Ops Lead vs. a CFO) while keeping all inline `[F###]` citations.
-3. **The Verifier Guard:** After generation, a deterministic Regex scanner combs through the memo. It verifies that every single citation exists in the original Fact Pack. If the LLM invents a number, it flags the memo (`clean=False`), ensuring strict provenance and absolute trust. (The LLM client also features an automatic fallback, cascading down to a 0-cost deterministic stub if rate limits are hit).
+### Q: You've mentioned the LLM doesn't do the math. So how does the final report actually get written?
+**A:** Right, the golden rule of this project is that the LLM *never* computes a number. Once the Python backend finishes all the math and proving the root cause, it creates a locked, completely deterministic "Fact Pack." We then hand that Fact Pack to Gemini and basically say, "Hey, turn these hard facts into a nice, readable memo for the Ops Lead." After Gemini writes the memo, our Verifier runs a regex scan over the text. If it finds that the LLM hallucinated a number or made up a citation that wasn't in the Fact Pack, it flags it. The math is done in Python; the AI just acts as the translator. 
